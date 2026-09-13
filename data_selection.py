@@ -19,10 +19,33 @@ def DatasetVarianceThreshold():
 
 def CorrelationThreshold():
     cols = DatasetVarianceThreshold()
-    features = data[cols]
+    features = data[cols].copy()
     correlation = features.corr().abs()
     upper_tri = correlation.where(np.triu(np.ones(correlation.shape), k=1).astype(bool))
-    to_drop = [column for column in upper_tri.columns if any(upper_tri[column] > 0.95)]
+    correlated_pairs = []
+    for column in upper_tri.columns:
+        for other_column in upper_tri.index:
+            value = upper_tri.loc[other_column, column]
+            if not np.isnan(value) and value > 0.95:
+                correlated_pairs.append((other_column, column))
+    to_drop = set()
+    for feature_a, feature_b in correlated_pairs:
+        if feature_a in to_drop or feature_b in to_drop:
+            continue
+        missing_a = features[feature_a].isna().sum()
+        missing_b = features[feature_b].isna().sum()
+        invalid_a = (~np.isfinite(features[feature_a])).sum()
+        invalid_b = (~np.isfinite(features[feature_b])).sum()
+        if missing_a > missing_b:
+            to_drop.add(feature_a)
+        elif missing_b > missing_a:
+            to_drop.add(feature_b)
+        elif invalid_a > invalid_b:
+            to_drop.add(feature_a)
+        elif invalid_b > invalid_a:
+            to_drop.add(feature_b)
+        else:
+            to_drop.add(feature_b)
     selected_columns = [column for column in features.columns if column not in to_drop]
     return selected_columns
 
