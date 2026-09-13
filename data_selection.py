@@ -46,7 +46,8 @@ def CorrelationThreshold():
             to_drop.add(feature_b)
         else:
             to_drop.add(feature_b)
-    selected_columns = [column for column in features.columns if column not in to_drop]
+    selected_columns = [col for col in features.columns if col not in to_drop]
+    selected_columns = ['gateway_id', 'ts', 'DateDt'] + selected_columns
     return selected_columns
 
 def features_selection_validity():
