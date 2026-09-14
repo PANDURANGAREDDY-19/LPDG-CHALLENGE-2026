@@ -1,23 +1,3 @@
-#!/usr/bin/env python3
-"""A 3-sigma anomaly baseline. THIS SHIPS TO STUDENTS.
-
-This is close to what our production notificator actually does, and it is the bar your
-service is measured against. It is deliberately simple; it is not deliberately bad.
-
-Method, for each Monday in the scored window:
-
-  1. Take the trailing 28 days of telemetry for each gateway, strictly before that Monday.
-  2. Per gateway, compute the mean and standard deviation of `offline_duration_sec`,
-     `disconnection_cnt` and `reboot_cnt`.
-  3. Flag any hour in the trailing 7 days where any of the three exceeds its own gateway's
-     mean by more than three standard deviations.
-  4. Rank gateways by flagged-hour count and take the top 15.
-
-Usage:
-
-    python baseline_3sigma.py --data path/to/data --out predictions.csv
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -40,14 +20,12 @@ BASELINE_DAYS = 28
 RECENT_DAYS = 7
 SIGMA = 3.0
 
-
 def load(data_dir: pathlib.Path) -> pd.DataFrame:
     frame = pd.read_parquet(
         data_dir / "telemetry", columns=["gateway_id", "ts_utc", *METRICS]
     )
     frame["ts"] = pd.to_datetime(frame["ts_utc"], utc=True)
     return frame.drop(columns=["ts_utc"])
-
 
 def rank_week(frame: pd.DataFrame, monday: dt.date) -> pd.DataFrame:
     # `dt.timedelta` rather than `pd.Timedelta`: on pandas 2.2 with numpy 2.5 the pandas form
@@ -57,7 +35,6 @@ def rank_week(frame: pd.DataFrame, monday: dt.date) -> pd.DataFrame:
     window = frame[(frame["ts"] >= end - dt.timedelta(days=BASELINE_DAYS)) & (frame["ts"] < end)]
     if window.empty:
         return pd.DataFrame(columns=["gateway_id", "flagged_hours", "worst_metric"])
-
     stats = window.groupby("gateway_id")[METRICS].agg(["mean", "std"])
     recent = window[window["ts"] >= end - dt.timedelta(days=RECENT_DAYS)].copy()
 
@@ -78,7 +55,6 @@ def rank_week(frame: pd.DataFrame, monday: dt.date) -> pd.DataFrame:
         worst_metric=("worst_metric", lambda s: next((v for v in s if v), "")),
     )
     return grouped.sort_values("flagged_hours", ascending=False).reset_index()
-
 
 def build_predictions(frame: pd.DataFrame) -> pd.DataFrame:
     rows = []
@@ -104,7 +80,6 @@ def build_predictions(frame: pd.DataFrame) -> pd.DataFrame:
             )
     return pd.DataFrame(rows)
 
-
 def main(argv: list[str] | None = None) -> int:
     here = pathlib.Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(description=__doc__)
@@ -119,7 +94,6 @@ def main(argv: list[str] | None = None) -> int:
     predictions.to_csv(args.out, index=False)
     print(f"wrote {args.out} — {len(predictions)} rows over {predictions.week_start.nunique()} weeks")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
