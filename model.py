@@ -11,9 +11,11 @@ from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import StandardScaler
 
 from data_selection import CorrelationThreshold, load_data
+from dataset_inclusion import compute_read_ratio, enrich_gateway_features, extract_visit_labels
 
 cols = CorrelationThreshold()
 METRICS = [col for col in cols if col not in ["gateway_id", "ts", "DateDt", "ts_utc"]]
+_GATEWAY_FEATURES = enrich_gateway_features()
 SCORED_WEEKS = [dt.date(2026, 2, 2) + dt.timedelta(days=7 * i) for i in range(8)]
 VISITS_PER_WEEK = 15
 BASELINE_DAYS = 28
@@ -26,7 +28,13 @@ def build_gateway_features(frame: pd.DataFrame, end: pd.Timestamp, days: int) ->
         return pd.DataFrame()
     features = window.groupby("gateway_id")[METRICS].agg(["mean", "std", "max"])
     features.columns = ["_".join(c) for c in features.columns]
-    return features.fillna(0)
+    features = features.fillna(0).reset_index()
+    features = features.merge(_GATEWAY_FEATURES, on="gateway_id", how="left")
+    features = features.merge(compute_read_ratio(end, days), on="gateway_id", how="left")
+    visit_labels = extract_visit_labels(end, days)
+    features = features.merge(visit_labels, on="gateway_id", how="left")
+    features["confirmed_anomaly_count"] = features["confirmed_anomaly_count"].fillna(0)
+    return features.set_index("gateway_id").fillna(0)
 
 def scale_features(X: pd.DataFrame) -> tuple[np.ndarray, StandardScaler]:
     scaler = StandardScaler()
