@@ -12,3 +12,7 @@
     1. Used Microsoft Copilot to browse through suitable Unsupervised Machine Learning Algorithms for flagging Anomalies.
         - The Algorithm Suggested for Anomaly Detection is Isolation Forest for grading anomalies
         - I Selected Isolation Forest along with a density based algorithm 'Local Outlier Factor' and ranked the anomalies based on aggregated score of the two models
+
+## General Use
+
+    - Used for zrephrasing text from Markdown files to avoid Grammatical mistakes

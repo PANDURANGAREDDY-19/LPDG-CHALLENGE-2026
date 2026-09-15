@@ -33,3 +33,7 @@ To improve sensitivity for stable features and reduce false positives for volati
 Coefficient of Variation (CV) = Standard Deviation / abs(mean)
 SIGMA = SIGMA * (1 + CV)
 ```
+
+## 5. Why Choose Machine Learning
+- The baseline model developed only checks the standard deviation of a single feature and ranks the gateways based on the difference.
+- This method is not efficient for real-world scenarios. Therefore, using Machine Learning to identify gateways with the largest anomalous behaviour is a better approach for solving the problem.
