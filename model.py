@@ -121,6 +121,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--data", type=pathlib.Path, default=default_data)
     parser.add_argument("--out", type=pathlib.Path, default=here / "predictions_model.csv")
     args = parser.parse_args(argv)
+    import os
+    os.chdir(args.data.resolve().parent)
     data = load_data()
     frame = data[["gateway_id", "ts", *METRICS]].copy()
     predictions = build_predictions(frame)
