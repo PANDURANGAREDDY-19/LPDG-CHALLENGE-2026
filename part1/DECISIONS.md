@@ -3,6 +3,11 @@
 ## 1. Expanded Feature Set for Anomaly Detection
 The company's baseline uses only three features (`offline_duration_sec`, `disconnection_cnt`, `reboot_cnt`) per gateway to detect anomalies. I extended this to use all informative features from the dataset, as limiting to three features risks missing anomalies that manifest in other signals such as traffic, signal quality, or system load.
 
+For feature inclusion in the base model, I initially used the same spike-direction logic for flagging gateways, irrespective of the feature’s purpose or expected behavior. While revisiting the datasets to investigate why the selected gateways differed from the baseline predictions, I found that different features require different spike-direction checks.
+
+For example, **Offline Duration** requires an **upward spike** check, as used in the baseline model, whereas **Online Duration** requires a **downward spike** check. Therefore, I have updated the exceeded-logic to evaluate each feature individually based on its expected behavior and directional characteristics.
+
+
 ## 2. Feature Selection via Variance and Correlation Thresholds
 To avoid noise and redundancy while retaining maximum signal, features were filtered in two stages:
 - **Variance Threshold (≤ 0.01)** — removes near-constant features that carry no discriminative information.
