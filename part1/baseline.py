@@ -20,6 +20,15 @@ BASELINE_DAYS = 28
 RECENT_DAYS = 7
 SIGMA = 3.0
 
+DOWNWARD_METRICS = {
+    "number_of_messages", "avg_uptime", "avg_activeproccess",
+    "avg_totalproccess", "online_duration_mins",
+}
+UPWARD_METRICS = {
+    "avg_offline_duration", "offline_duration_sec",
+    "disconnection_cnt", "reboot_cnt",
+}
+
 def load(data_dir: pathlib.Path) -> pd.DataFrame:
     frame = pd.read_parquet(
         data_dir / "telemetry", columns=["gateway_id", "ts_utc", *METRICS]
@@ -43,7 +52,16 @@ def rank_week(frame: pd.DataFrame, monday: dt.date) -> pd.DataFrame:
     for metric in METRICS:
         mean = recent["gateway_id"].map(stats[(metric, "mean")])
         std = recent["gateway_id"].map(stats[(metric, "std")]).replace(0, np.nan)
-        exceeded = (recent[metric] - mean) > SIGMA * std
+        delta = recent[metric] - mean
+        threshold = SIGMA * std
+
+        if metric in UPWARD_METRICS:
+            exceeded = delta > threshold
+        elif metric in DOWNWARD_METRICS:
+            exceeded = delta < -threshold
+        else:
+            exceeded = (delta > threshold) | (delta < -threshold)
+
         exceeded = exceeded.fillna(False)
         flags = flags + exceeded.astype(int)
         worst = worst.where(~exceeded | (worst != ""), metric)
@@ -84,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
     here = pathlib.Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(description=__doc__)
     # Works both from this repository and from the copy shipped alongside the data.
-    default_data = here / "data" if (here / "data").exists() else here.parent / "student-brief" / "data"
+    default_data = here / "data" if (here / "data").exists() else here.parent / "data"
     parser.add_argument("--data", type=pathlib.Path, default=default_data)
     parser.add_argument("--out", type=pathlib.Path, default=here / "predictions_baseline.csv")
     args = parser.parse_args(argv)

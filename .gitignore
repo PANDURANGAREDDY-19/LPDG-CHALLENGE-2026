@@ -1,6 +1,5 @@
 /data
 baseline_3sigma.py
-validate_submission.py
 .vscode/
 test.py
 /__pycache__
