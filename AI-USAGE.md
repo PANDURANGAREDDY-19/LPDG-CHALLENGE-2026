@@ -24,3 +24,4 @@ Used AI to Understand what caused the Issue and got to know some language charac
 
     - Used for zrephrasing text from Markdown files to avoid Grammatical mistakes
     - Used to Build complete Docker COntainer 
+    - Used to Create a compare.py Script for comparing my prediction Results with the baseline_3sigma.py predictions
